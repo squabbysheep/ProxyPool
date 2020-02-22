@@ -69,6 +69,7 @@ def test_proxies(proxies):
 
 def spider_cycle():
     now = int(time.time())
+    logging.info('THE SPIDER COME TO WORK')
     for spider in SPIDER_CONFIGURE:
         spider.append(now)
         proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
@@ -87,7 +88,9 @@ def spider_cycle():
                     test_proxies(proxies)
                 else:
                     logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
-        time.sleep(SPIDER_CYCLE_INTERVAL)
+        logging.info('THE SPIDER SLEEP FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL * 60))
+        time.sleep(SPIDER_CYCLE_INTERVAL * 60)
+        logging.info('THE SPIDER COME TO WORK')
 
 
 def test_pool_cycle():
@@ -107,7 +110,7 @@ def replace_local_ip():
 
 
 def replace_local_ip_cycle():
-    time.sleep(REPLACE_LOCAL_IP_FIRST_WAIT)
+    time.sleep(REPLACE_LOCAL_IP_FIRST_WAIT * 60)
     while True:
         replace_local_ip()
         time.sleep(REPLACE_LOCAL_IP_CYCLE_INTERVAL * 60)
