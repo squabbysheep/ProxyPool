@@ -9,6 +9,10 @@
 SPIDER_CONFIGURE = [
     ['https://www.xicidaili.com/nn/', 'parse_xc', 30],  # 高匿
     ['https://www.xicidaili.com/nn/2', 'parse_xc', 30],  # 高匿
+    ['http://www.66ip.cn/mo.php', 'parse_66ip', 15],  # 混合
+    ['http://www.66ip.cn/nmtq.php', 'parse_66ip', 15],  # 混合
+    ['http://www.data5u.com/', 'parse_5u', 5],  # 高匿
+    ['https://www.kuaidaili.com/free/inha/1/', 'parse_k', 30],  # 高匿
 ]
 
 # 爬虫循环检测间隔

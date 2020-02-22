@@ -19,5 +19,21 @@ def parse_xc(url):  # 西刺代理
             re.findall(r'<td>([\d+.]+)</td>\s*?<td>(\d+)</td>', requests.get(url, headers=headers, timeout=5).text)]
 
 
+def parse_66ip(url):  # 66免费代理
+    return ['http://{}'.format(proxy) for proxy in
+            re.findall(r'[\d.]+:\d+', requests.get(url, headers=headers, timeout=5).text)]
+
+
+def parse_5u(url):  # 无忧代理
+    text = requests.get(url, headers=headers).text
+    reg = r'<ul.*?>(\d+\.\d+\.\d+\.\d+)<.*?>(\d+)</li>.*?<li>([高匿名透明]+)</li>'
+    return ['http://{}:{}'.format(ip, port) for ip, port, level in re.findall(reg, text, re.S) if level == '高匿']
+
+
+def parse_k(url):  # 快代理
+    return ['http://{}:{}'.format(ip, port) for ip, port in re.findall(
+        r'<tr.*?>(\d+\.\d+\.\d+\.\d+)<.*?>(\d+)</td>.*?</tr>', requests.get(url, headers=headers).text, re.S)]
+
+
 if __name__ == '__main__':
     print(parse_xc('https://www.xicidaili.com/nn/'))

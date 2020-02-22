@@ -6,7 +6,9 @@
 @Description : null
 """
 from multiprocessing import Process
-from utils import spider_cycle, test_pool_cycle, replace_local_ip_cycle
+from utils import spider_cycle
+from utils import test_pool_cycle
+from utils import replace_local_ip_cycle
 
 
 def run():

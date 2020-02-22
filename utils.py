@@ -11,17 +11,35 @@ import sys
 import aiohttp
 import time
 import redis
+import logging
+import os
 from setting import *
 from parse import *
 
-# POOL = redis.ConnectionPool(url=REDIS_URL, max_connections=100)
-# conn = redis.Redis(connection_pool=POOL)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)  # 设置为最低
+
+log_dir = os.path.join(os.getcwd(), 'Logs')
+log_file = os.path.join(log_dir, 'spider_error.log')
+if not os.path.exists(log_dir):
+    os.mkdir(log_dir)
+
+file_handler = logging.FileHandler(log_file, mode='a')  # 日志文件
+file_handler.setLevel(logging.ERROR)
+file_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
+logger.addHandler(file_handler)
+
+console_handler = logging.StreamHandler()  # 控制台
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
+logger.addHandler(console_handler)
+
 try:
     conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
     conn.time()
 except Exception as e:
-    print('[ERROR][{}][REDIS NO RUNNING][{}]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), e))
-    print('[LOG][{}][REDIS NO RUNNING,SYSTEM EXIT]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+    logging.error('REDIS NO RUNNING - {}'.format(e))
+    logging.error('REDIS NO RUNNING,SYSTEM EXIT')
     sys.exit()
 
 
@@ -33,7 +51,7 @@ async def test_single_proxy(proxy):
             async with session.head(TEST_URL, proxy=proxy, timeout=10) as response:  # 请求头即可
                 if response.status == 200:
                     conn.sadd(POOL_NAME, proxy)
-                    print('[LOG][{}][{}]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), proxy))
+                    logging.info(proxy)
                 elif conn.sismember(POOL_NAME, proxy):
                     conn.srem(POOL_NAME, proxy)
     except Exception as e:
@@ -46,9 +64,7 @@ def test_proxies(proxies):
         tasks = [test_single_proxy(proxy) for proxy in proxies]
         loop.run_until_complete(asyncio.wait(tasks))
     except ValueError:
-        print('')
-        print(
-            '[ERROR][{}][ASYNC ERROR][PROXY={}]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), proxies))
+        logging.error('ASYNC ERROR')
 
 
 def spider_cycle():
@@ -57,9 +73,10 @@ def spider_cycle():
         spider.append(now)
         proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
         if proxies:
+            logging.info('CRAWL SUCCESS: URL={}'.format(spider[0]))
             test_proxies(proxies)
         else:
-            print('[ERROR][{}][{}][NO PROXY]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), spider[0]))
+            logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
 
     while True:
         now = int(time.time())
@@ -69,8 +86,7 @@ def spider_cycle():
                 if proxies:
                     test_proxies(proxies)
                 else:
-                    print('[ERROR][{}][{}][NO PROXY]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                                             spider[0]))
+                    logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
         time.sleep(SPIDER_CYCLE_INTERVAL)
 
 
@@ -85,9 +101,9 @@ def test_pool_cycle():
 def replace_local_ip():
     (status, output) = subprocess.getstatusoutput('adsl-stop;adsl-start')
     if status == 0:
-        print('[LOG][{}][LOCAL IP UPDATED]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+        logging.info('LOCAL IP UPDATED')
     else:
-        print('[ERROR][{}][LOCAL IP UPDATE FAILED]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+        logging.error('LOCAL IP UPDATE FAILED')
 
 
 def replace_local_ip_cycle():
