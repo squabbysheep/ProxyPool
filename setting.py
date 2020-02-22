@@ -9,7 +9,6 @@
 SPIDER_CONFIGURE = [
     ['https://www.xicidaili.com/nn/', 'parse_xc', 30],  # 高匿
     ['https://www.xicidaili.com/nn/2', 'parse_xc', 30],  # 高匿
-    ['https://www.xicidaili.com/nt/', 'parse_xc', 30]  # 普通代理
 ]
 
 # 爬虫循环检测间隔
@@ -22,8 +21,8 @@ PROXY_POOL_CYCLE_INTERVAL = 5  # 默认5分钟检测一次
 TEST_URL = 'http://www.baidu.com/'
 
 # Redis
-REDIS_HOST = '127.0.0.1'
-REDIS_PORT = 6379
+REDIS_HOST = '121.36.55.134'
+REDIS_PORT = 8888
 REDIS_PASSWORD = 123456
 POOL_NAME = 'JASON_POOL'
 

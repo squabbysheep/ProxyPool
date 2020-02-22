@@ -7,7 +7,7 @@
 """
 import asyncio
 import subprocess
-
+import sys
 import aiohttp
 import time
 import redis
@@ -16,7 +16,13 @@ from parse import *
 
 # POOL = redis.ConnectionPool(url=REDIS_URL, max_connections=100)
 # conn = redis.Redis(connection_pool=POOL)
-conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+try:
+    conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+    conn.time()
+except Exception as e:
+    print('[ERROR][{}][REDIS NO RUNNING][{}]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), e))
+    print('[LOG][{}][REDIS NO RUNNING,SYSTEM EXIT]'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+    sys.exit()
 
 
 async def test_single_proxy(proxy):
