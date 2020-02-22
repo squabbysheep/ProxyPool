@@ -13,6 +13,7 @@ SPIDER_CONFIGURE = [
     ['http://www.66ip.cn/nmtq.php', 'parse_66ip', 15],  # 混合
     ['http://www.data5u.com/', 'parse_5u', 5],  # 高匿
     ['https://www.kuaidaili.com/free/inha/1/', 'parse_k', 30],  # 高匿
+    ['http://118.24.52.95/get_all/', 'parse_1', 30],  # 高匿
 ]
 
 # 爬虫循环检测间隔

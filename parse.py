@@ -7,7 +7,6 @@
 """
 import requests
 import re
-from lxml import etree
 
 headers = {
     'User-Agent': 'User-Agent:Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
@@ -35,5 +34,5 @@ def parse_k(url):  # 快代理
         r'<tr.*?>(\d+\.\d+\.\d+\.\d+)<.*?>(\d+)</td>.*?</tr>', requests.get(url, headers=headers).text, re.S)]
 
 
-if __name__ == '__main__':
-    print(parse_xc('https://www.xicidaili.com/nn/'))
+def parse_1(url):  # 私人公开代理接口
+    return ['http://{}'.format(js.get("proxy")) for js in requests.get(url, headers=headers).json()]
