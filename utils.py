@@ -6,6 +6,7 @@
 @Description : null
 """
 import asyncio
+import json
 import subprocess
 import sys
 import aiohttp
@@ -34,13 +35,39 @@ console_handler.setLevel(logging.INFO)
 console_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
 logger.addHandler(console_handler)
 
-try:
-    conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-    conn.time()
-except Exception as e:
-    logging.error('REDIS NO RUNNING - {}'.format(e))
-    logging.error('REDIS NO RUNNING,SYSTEM EXIT')
-    sys.exit()
+
+class ProxyPoolAPI(object):
+    def __init__(self, host, port, password, pool_name):
+        self.conn = redis.Redis(host=host, port=port, password=password)
+        self.pool_name = pool_name
+        try:
+            self.conn.exists(pool_name)  # 验证是否连接
+        except Exception as redis_error:
+            logging.error('REDIS ERROR - {}'.format(redis_error))
+            logging.error('REDIS NO RUNNING, SYSTEM EXIT')
+            sys.exit(0)
+
+    def add(self, proxy):
+        try:
+            self.conn.sadd(self.pool_name, proxy)
+        except Exception as unknown_error:
+            logging.error('ADD PROXY ERROR - {}'.format(unknown_error))
+
+    def rem(self, proxy):
+        try:
+            if self.conn.sismember(self.pool_name, proxy):
+                self.conn.srem(self.pool_name, proxy)
+        except Exception as unknown_error:
+            logging.error('REMOVE PROXY ERROR - {}'.format(unknown_error))
+
+    def get_all(self):
+        try:
+            return self.conn.smembers(self.pool_name)
+        except Exception as unknown_error:
+            logging.error('GET ALL PROXY ERROR - {}'.format(unknown_error))
+
+
+pool = ProxyPoolAPI(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, pool_name=POOL_NAME)
 
 
 async def test_single_proxy(proxy):
@@ -48,14 +75,28 @@ async def test_single_proxy(proxy):
         async with aiohttp.ClientSession() as session:
             if isinstance(proxy, bytes):
                 proxy = proxy.decode('utf-8')
-            async with session.head(TEST_URL, proxy=proxy, timeout=10) as response:  # 请求头即可
-                if response.status == 200:
-                    conn.sadd(POOL_NAME, proxy)
-                    logging.info(proxy)
-                elif conn.sismember(POOL_NAME, proxy):
-                    conn.srem(POOL_NAME, proxy)
-    except Exception as e:
-        del e
+                async with session.head(TEST_URL, proxy=proxy, timeout=7) as response:  # 请求头即可
+                    if response.status == 200:
+                        pool.add(proxy)
+                        logging.info('STILL VALID: {}'.format(proxy))
+                    else:
+                        pool.rem(proxy)
+                        logging.info('INVALID PROXY: {}'.format(proxy))
+            else:
+                async with session.get(TEST_URL_LEVER, proxy=proxy, timeout=10) as response:  # 请求头即可
+                    if response.status == 200:
+                        html = await response.read()
+                        if proxy[7:].split(':')[0] == json.loads(html.decode('utf8')).get('origin'):
+                            pool.add(proxy)
+                            logging.info('ANONYMOUS PROXY: {}'.format(proxy))
+                        else:
+                            logging.info('TRANSPARENT PROXY: {}'.format(proxy))
+                    else:
+                        logging.info('INVALID PROXY: {}'.format(proxy))
+    except Exception as async_e:
+        pool.rem(proxy)
+        logging.info('INVALID PROXY: {}'.format(proxy))
+        del async_e
 
 
 def test_proxies(proxies):
@@ -88,23 +129,35 @@ def spider_cycle():
                     test_proxies(proxies)
                 else:
                     logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
-        logging.info('THE SPIDER SLEEP FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL * 60))
+        logging.info('THE SPIDER SLEEPS FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL))
         time.sleep(SPIDER_CYCLE_INTERVAL * 60)
-        logging.info('THE SPIDER COME TO WORK')
+        logging.info('THE SPIDER COMES TO CHECK AND WORK')
 
 
 def test_pool_cycle():
     while True:
-        proxies = conn.smembers(POOL_NAME)
+        proxies = pool.get_all()
         if proxies:
             test_proxies(proxies)
         time.sleep(PROXY_POOL_CYCLE_INTERVAL * 60)
+        logging.info('THE POOL TEST SLEEPS FOR {} MINUTES'.format(PROXY_POOL_CYCLE_INTERVAL))
+
+
+def get_ip():
+    (status, output) = subprocess.getstatusoutput('ifconfig')
+    if status == 0:
+        return re.search(r'ppp0.*?inet.*?(d+.d+.d+.d+).*?netmask', output, re.S).group(1)
 
 
 def replace_local_ip():
     (status, output) = subprocess.getstatusoutput('adsl-stop;adsl-start')
     if status == 0:
-        logging.info('LOCAL IP UPDATED')
+        ip = get_ip()
+        logging.info('LOCAL IP UPDATED, NEW IP IS: {}'.format(ip))
+        if TINY_PROXY:
+            proxy = 'http://{}:{}'.format(ip, TINY_PROXY_PORT)
+            pool.add(proxy)
+            logging.info('ANONYMOUS PROXY (LOCAL): {}'.format(proxy))
     else:
         logging.error('LOCAL IP UPDATE FAILED')
 
