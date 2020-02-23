@@ -167,6 +167,7 @@ def replace_local_ip():
         ip = get_ip()
         logging.info('LOCAL IP UPDATED, NEW IP IS: {}'.format(ip))
         if TINY_PROXY:
+            subprocess.getstatusoutput('systemctl restart tinyproxy.service')  # 解决服务挂掉问题
             proxy = 'http://{}:{}'.format(ip, TINY_PROXY_PORT)
             pool.add(proxy)
             logging.info('ANONYMOUS PROXY (LOCAL): {}'.format(proxy))
