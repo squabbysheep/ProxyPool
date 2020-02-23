@@ -1,4 +1,4 @@
-#### ProxyPool-v2.0
+#### ProxyPool-v3.0
 
 ```python
 # 项目需要部署在vps上，推荐部署在云立方[https://www.yunlifang.cn/dynamicvpsjsxzdx.asp]
