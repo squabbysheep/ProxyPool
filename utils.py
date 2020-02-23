@@ -158,7 +158,7 @@ def test_pool_cycle():
 def get_ip():
     (status, output) = subprocess.getstatusoutput('ifconfig')
     if status == 0:
-        return re.search(r'ppp0.*?inet.*?(d+.d+.d+.d+).*?netmask', output, re.S).group(1)
+        return re.search(r'ppp0.*?inet.*?(\d+.\d+.\d+.\d+).*?netmask', output, re.S).group(1)
 
 
 def replace_local_ip():
