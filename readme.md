@@ -48,3 +48,5 @@ curl -x 112.84.118.216:8888 httpbin.org/get
 
 [Tag-v2.0](https://github.com/squabbysheep/ProxyPool/tree/v2.0)
 
+[API接口](http://121.36.55.134:80)
+
