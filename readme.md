@@ -37,6 +37,13 @@ iptables -I INPUT -p tcp --dport 8888 -j ACCEPT
 curl -x 112.84.118.216:8888 httpbin.org/get
 ```
 
+##### 添加API接口
+
+```python
+# 部署在redis所在服务器上
+# 运行方式 nohup python3 api.py >/dev/null 2>&1 &
+```
+
 [目前GitHub进度](https://github.com/squabbysheep/ProxyPool/tree/master)
 
 [Tag-v2.0](https://github.com/squabbysheep/ProxyPool/tree/v2.0)

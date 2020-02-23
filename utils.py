@@ -60,11 +60,23 @@ class ProxyPoolAPI(object):
         except Exception as unknown_error:
             logging.error('REMOVE PROXY ERROR - {}'.format(unknown_error))
 
+    def count(self):
+        try:
+            return self.conn.scard(self.pool_name)
+        except Exception as unknown_error:
+            logging.error('GET COUNT OF PROXIES ERROR - {}'.format(unknown_error))
+
+    def get_one(self):
+        try:
+            return self.conn.srandmember(self.pool_name, 1)
+        except Exception as unknown_error:
+            logging.error('GET ONE PROXY ERROR - {}'.format(unknown_error))
+
     def get_all(self):
         try:
             return self.conn.smembers(self.pool_name)
         except Exception as unknown_error:
-            logging.error('GET ALL PROXY ERROR - {}'.format(unknown_error))
+            logging.error('GET ALL PROXIES ERROR - {}'.format(unknown_error))
 
 
 pool = ProxyPoolAPI(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, pool_name=POOL_NAME)

@@ -39,3 +39,6 @@ REPLACE_LOCAL_IP_CYCLE_INTERVAL = 20  # 默认20分钟替换一次
 # VPS服务器上是否有tiny_proxy服务
 TINY_PROXY = True
 TINY_PROXY_PORT = 8888
+
+# API
+API_PORT = 80
