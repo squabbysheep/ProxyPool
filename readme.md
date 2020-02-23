@@ -39,3 +39,5 @@ curl -x 112.84.118.216:8888 httpbin.org/get
 
 [目前GitHub进度](https://github.com/squabbysheep/ProxyPool/tree/master)
 
+[Tag-v2.0](https://github.com/squabbysheep/ProxyPool/tree/v2.0)
+
