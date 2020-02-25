@@ -5,11 +5,11 @@
 @Email  : 17859717522@163.com
 @Description : null
 """
-# 爬虫配置 [['url','parse','interval']] interval的单位是分钟
+# 爬虫配置 [['url','parse','interval']] interval的单位是分钟, 最低不得低于3分钟
 SPIDER_CONFIGURE = [
     ['https://www.xicidaili.com/nn/', 'parse_xc', 10],  # 高匿
     ['https://www.xicidaili.com/nn/2', 'parse_xc', 10],  # 高匿
-    ['http://www.data5u.com/', 'parse_5u', 3],  # 高匿
+    ['http://www.data5u.com/', 'parse_5u', 5],  # 高匿
     ['https://www.kuaidaili.com/free/inha/1/', 'parse_k', 10],  # 高匿
     ['http://www.ip3366.net/free/?stype=1', 'parse_xc', 10],  # 高匿
     ['http://www.nimadaili.com/gaoni/1/', 'parse_ni', 5],  # 高匿
@@ -26,8 +26,8 @@ SPIDER_CONFIGURE = [
     ['https://www.freeip.top/api/proxy_ips?page=1&isp=移动', 'parse_free', 5],  # 混合
     ['https://www.freeip.top/api/proxy_ips?page=1&isp=联通', 'parse_free', 5],  # 混合
     ['http://www.iphai.com/', 'parse_ni', 5],  # 混合
-    ['http://www.66ip.cn/mo.php', 'parse_66ip', 3],  # 混合
-    ['http://www.66ip.cn/nmtq.php', 'parse_66ip', 3],  # 混合
+    ['http://www.66ip.cn/mo.php', 'parse_66ip', 5],  # 混合
+    ['http://www.66ip.cn/nmtq.php', 'parse_66ip', 5],  # 混合
     ['http://118.24.52.95/get_all/', 'parse_1', 5],  # 混合
 ]
 
@@ -60,3 +60,6 @@ TINY_PROXY_PORT = 8888
 
 # API
 API_PORT = 80
+
+# 是否将控制台日志输入到文件(log_level=INFO)
+CONSOLE_LOG_TO_FILE = True

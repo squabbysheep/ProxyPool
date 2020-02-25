@@ -14,6 +14,7 @@ import time
 import redis
 import logging
 import os
+import requests
 from setting import *
 from parse import *
 
@@ -29,12 +30,13 @@ file_handler_error.setLevel(logging.ERROR)
 file_handler_error.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
 logger.addHandler(file_handler_error)
 
-file_handler_info = logging.FileHandler(os.path.join(log_dir, 'spider_info.log'), mode='w')  # 控制台日志文件
-file_handler_info.setLevel(logging.INFO)
-file_handler_info.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
-logger.addHandler(file_handler_info)
+if CONSOLE_LOG_TO_FILE:
+    file_handler_info = logging.FileHandler(os.path.join(log_dir, 'spider_info.log'), mode='w')  # 控制台日志文件
+    file_handler_info.setLevel(logging.INFO)
+    file_handler_info.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
+    logger.addHandler(file_handler_info)
 
-console_handler = logging.StreamHandler()  # 控制台
+console_handler = logging.StreamHandler()  # 控制台日志输出
 console_handler.setLevel(logging.INFO)
 console_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
 logger.addHandler(console_handler)
@@ -99,8 +101,10 @@ async def test_single_proxy(proxy):
                             pool.add(proxy)
                             logging.info('ANONYMOUS PROXY: {}'.format(proxy))
                         else:
+                            pool.rem(proxy)
                             logging.info('TRANSPARENT PROXY: {}'.format(proxy))
                     else:
+                        pool.rem(proxy)
                         logging.info('INVALID PROXY: {}'.format(proxy))
             else:
                 async with session.head(TEST_URL, proxy=proxy, timeout=7) as response:
@@ -117,12 +121,46 @@ async def test_single_proxy(proxy):
 
 
 def test_proxies(proxies):
+    if isinstance(proxies, set):
+        proxies = [proxy.decode('utf-8') for proxy in proxies]
+    proxies_http = [proxy for proxy in proxies if 'https' not in proxy]
+    proxies_https = [proxy for proxy in proxies if 'https' in proxy]
     try:
         loop = asyncio.get_event_loop()
-        tasks = [test_single_proxy(proxy) for proxy in proxies]
+        tasks = [test_single_proxy(proxy) for proxy in proxies_http]
         loop.run_until_complete(asyncio.wait(tasks))
     except ValueError:
         logging.error('ASYNC ERROR')
+    test_https_proxies(proxies_https)
+
+
+def test_https_proxies(proxies_https):
+    for proxy in proxies_https:
+        if isinstance(proxy, bytes):
+            proxy = proxy.decode('utf-8')
+        https_proxy = {
+            'https': proxy,
+        }
+        if REJECT_NO_ANONYMITY_PROXY:
+            response = requests.get(TEST_URL_LEVER, proxies=https_proxy, timeout=7)
+            if response.status_code == 200:
+                if proxy[8:].split(':')[0] == (response.json())['origin']:
+                    pool.add(proxy)
+                    logging.info('ANONYMOUS PROXY: {}'.format(proxy))
+                else:
+                    pool.rem(proxy)
+                    logging.info('TRANSPARENT PROXY: {}'.format(proxy))
+            else:
+                pool.rem(proxy)
+                logging.info('INVALID PROXY: {}'.format(proxy))
+        else:
+            response = requests.get(TEST_URL, proxies=https_proxy, timeout=7)
+            if response.status_code == 200:
+                pool.add(proxy)
+                logging.info('VALID VALID: {}'.format(proxy))
+            else:
+                pool.rem(proxy)
+                logging.info('INVALID PROXY: {}'.format(proxy))
 
 
 def spider_cycle():
@@ -141,11 +179,15 @@ def spider_cycle():
         now = int(time.time())
         for spider in SPIDER_CONFIGURE:
             if now - spider[3] >= spider[2] * 60:
-                proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
-                if proxies:
-                    test_proxies(proxies)
-                else:
-                    logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
+                try:
+                    proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
+                    if proxies:
+                        test_proxies(proxies)
+                    else:
+                        logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
+                except Exception as error:
+                    logging.error('CRAWL ERROR: IP WAS SEALED, URL={}'.format(spider[0]))
+                    logging.error('CRAWL ERROR: IP WAS SEALED, ERROR MESSAGE={}'.format(error))
         logging.info('THE SPIDER SLEEPS FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL))
         time.sleep(SPIDER_CYCLE_INTERVAL * 60)
         logging.info('THE SPIDER COMES TO CHECK AND WORK')
