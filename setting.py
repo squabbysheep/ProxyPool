@@ -9,10 +9,25 @@
 SPIDER_CONFIGURE = [
     ['https://www.xicidaili.com/nn/', 'parse_xc', 10],  # 高匿
     ['https://www.xicidaili.com/nn/2', 'parse_xc', 10],  # 高匿
-    ['http://www.66ip.cn/mo.php', 'parse_66ip', 3],  # 混合
-    ['http://www.66ip.cn/nmtq.php', 'parse_66ip', 3],  # 混合
     ['http://www.data5u.com/', 'parse_5u', 3],  # 高匿
     ['https://www.kuaidaili.com/free/inha/1/', 'parse_k', 10],  # 高匿
+    ['http://www.ip3366.net/free/?stype=1', 'parse_xc', 10],  # 高匿
+    ['http://www.nimadaili.com/gaoni/1/', 'parse_ni', 5],  # 高匿
+    ['http://www.nimadaili.com/gaoni/2/', 'parse_ni', 5],  # 高匿
+    ['http://www.nimadaili.com/gaoni/3/', 'parse_ni', 5],  # 高匿
+    ['http://www.nimadaili.com/gaoni/4/', 'parse_ni', 5],  # 高匿
+    ['http://www.xiladaili.com/gaoni/1/', 'parse_ni', 5],  # 高匿
+    ['http://www.xiladaili.com/gaoni/2/', 'parse_ni', 5],  # 高匿
+    ['http://www.xiladaili.com/gaoni/3/', 'parse_ni', 5],  # 高匿
+    ['http://www.xiladaili.com/gaoni/4/', 'parse_ni', 5],  # 高匿
+    ['https://www.freeip.top/api/proxy_ips?page=1&country=中国', 'parse_free', 5],  # 混合
+    ['https://www.freeip.top/api/proxy_ips?page=1&isp=电信', 'parse_free', 5],  # 混合
+    ['https://www.freeip.top/api/proxy_ips?page=1&isp=阿里云', 'parse_free', 5],  # 混合
+    ['https://www.freeip.top/api/proxy_ips?page=1&isp=移动', 'parse_free', 5],  # 混合
+    ['https://www.freeip.top/api/proxy_ips?page=1&isp=联通', 'parse_free', 5],  # 混合
+    ['http://www.iphai.com/', 'parse_ni', 5],  # 混合
+    ['http://www.66ip.cn/mo.php', 'parse_66ip', 3],  # 混合
+    ['http://www.66ip.cn/nmtq.php', 'parse_66ip', 3],  # 混合
     ['http://118.24.52.95/get_all/', 'parse_1', 5],  # 混合
 ]
 

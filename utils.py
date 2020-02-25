@@ -29,7 +29,7 @@ file_handler_error.setLevel(logging.ERROR)
 file_handler_error.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
 logger.addHandler(file_handler_error)
 
-file_handler_info = logging.FileHandler(os.path.join(log_dir, 'spider_info.log'), mode='a')  # 控制台日志文件
+file_handler_info = logging.FileHandler(os.path.join(log_dir, 'spider_info.log'), mode='w')  # 控制台日志文件
 file_handler_info.setLevel(logging.INFO)
 file_handler_info.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
 logger.addHandler(file_handler_info)
@@ -91,25 +91,24 @@ async def test_single_proxy(proxy):
         async with aiohttp.ClientSession() as session:
             if isinstance(proxy, bytes):
                 proxy = proxy.decode('utf-8')
-                async with session.head(TEST_URL, proxy=proxy, timeout=7) as response:  # 请求头即可
-                    if response.status == 200:
-                        pool.add(proxy)
-                        logging.info('STILL VALID: {}'.format(proxy))
-                    else:
-                        pool.rem(proxy)
-                        logging.info('INVALID PROXY: {}'.format(proxy))
-            else:
-                async with session.get(TEST_URL_LEVER, proxy=proxy, timeout=10) as response:  # 请求头即可
+            if REJECT_NO_ANONYMITY_PROXY:
+                async with session.get(TEST_URL_LEVER, proxy=proxy, timeout=7) as response:
                     if response.status == 200:
                         html = await response.read()
                         if proxy[7:].split(':')[0] == json.loads(html.decode('utf8')).get('origin'):
                             pool.add(proxy)
                             logging.info('ANONYMOUS PROXY: {}'.format(proxy))
                         else:
-                            if not REJECT_NO_ANONYMITY_PROXY:
-                                pool.add(proxy)
                             logging.info('TRANSPARENT PROXY: {}'.format(proxy))
                     else:
+                        logging.info('INVALID PROXY: {}'.format(proxy))
+            else:
+                async with session.head(TEST_URL, proxy=proxy, timeout=7) as response:
+                    if response.status == 200:
+                        pool.add(proxy)
+                        logging.info('VALID VALID: {}'.format(proxy))
+                    else:
+                        pool.rem(proxy)
                         logging.info('INVALID PROXY: {}'.format(proxy))
     except Exception as async_e:
         pool.rem(proxy)
