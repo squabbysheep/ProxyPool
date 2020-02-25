@@ -21,14 +21,18 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # 设置为最低
 
 log_dir = os.path.join(os.getcwd(), 'Logs')
-log_file = os.path.join(log_dir, 'spider_error.log')
 if not os.path.exists(log_dir):
     os.mkdir(log_dir)
 
-file_handler = logging.FileHandler(log_file, mode='a')  # 日志文件
-file_handler.setLevel(logging.ERROR)
-file_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
-logger.addHandler(file_handler)
+file_handler_error = logging.FileHandler(os.path.join(log_dir, 'spider_error.log'), mode='a')  # 错误日志文件
+file_handler_error.setLevel(logging.ERROR)
+file_handler_error.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
+logger.addHandler(file_handler_error)
+
+file_handler_info = logging.FileHandler(os.path.join(log_dir, 'spider_info.log'), mode='a')  # 控制台日志文件
+file_handler_info.setLevel(logging.INFO)
+file_handler_info.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
+logger.addHandler(file_handler_info)
 
 console_handler = logging.StreamHandler()  # 控制台
 console_handler.setLevel(logging.INFO)
@@ -102,6 +106,8 @@ async def test_single_proxy(proxy):
                             pool.add(proxy)
                             logging.info('ANONYMOUS PROXY: {}'.format(proxy))
                         else:
+                            if not REJECT_NO_ANONYMITY_PROXY:
+                                pool.add(proxy)
                             logging.info('TRANSPARENT PROXY: {}'.format(proxy))
                     else:
                         logging.info('INVALID PROXY: {}'.format(proxy))
