@@ -37,8 +37,8 @@ SPIDER_CYCLE_INTERVAL = 1  # 默认1分钟检测一次
 # 代理池循环检测间隔
 PROXY_POOL_CYCLE_INTERVAL = 3  # 默认3分钟检测一次
 
-# 测试网站
-TEST_URL = 'https://icanhazip.com/'
+# 测试网站(已经指定,此处指定无效)
+# TEST_URL = 'http://httpbin.org/get'  # 'https://icanhazip.com/'
 
 # 响应时间限制
 HTTP_TIMEOUT = 4

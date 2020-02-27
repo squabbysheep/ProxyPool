@@ -6,6 +6,7 @@
 @Description : null
 """
 import asyncio
+import json
 import os
 import subprocess
 import time
@@ -39,15 +40,16 @@ pool = ProxyPoolAPI(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, p
 async def test_single_proxy(proxy, origin_pool):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get('http://www.baidu.com', proxy=proxy, timeout=HTTPS_TIMEOUT) as response:
+            async with session.head('http://www.baidu.com', proxy=proxy, timeout=HTTPS_TIMEOUT) as response:
                 status_code = response.status
                 if status_code == 200 and origin_pool:  # origin_pool 为 True
                     pool.add(proxy)
                     logging.debug('ANONYMOUS PROXY: {}'.format(proxy))
                 elif status_code == 200:
-                    async with session.get(TEST_URL, proxy=proxy, timeout=HTTPS_TIMEOUT*2) as response_1:
-                        ip = await response_1.read()
-                        if ip.decode('utf8') in proxy:
+                    async with session.get('http://httpbin.org/get', proxy=proxy,
+                                           timeout=HTTPS_TIMEOUT * 2) as response1:
+                        html = await response1.read()
+                        if json.loads(html.decode('utf8')).get('origin') in proxy:
                             pool.add(proxy)
                             logging.debug('ANONYMOUS PROXY: {}'.format(proxy))
                 else:
@@ -100,8 +102,9 @@ def test_https_proxies_process(https_queue):
                 del requests_error
         else:
             try:
-                response = requests.get(TEST_URL, proxies=proxy_dict, timeout=HTTPS_TIMEOUT*2)
-                if response.text in proxy:
+                response = requests.get('http://httpbin.org/get', proxies=proxy_dict, timeout=HTTPS_TIMEOUT * 2)
+                html = response.text
+                if json.loads(html.decode('utf8')).get('origin') in proxy:
                     pool.add(proxy)
                     logging.debug('ANONYMOUS PROXY: {}'.format(proxy))
                 else:
