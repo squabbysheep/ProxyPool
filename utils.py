@@ -1,45 +1,72 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding:utf-8
 """
-@Author : Yuanmin Zhou
-@Email  : 17859717522@163.com
+@Author : Lucky Jason
+@Email  : LuckyJasonone@gmail.com
 @Description : null
 """
-import asyncio
-import json
-import subprocess
 import sys
-import aiohttp
-import time
-import redis
 import logging
-import os
+import redis
 import requests
-from setting import *
-from parse import *
+import re
 
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)  # 设置为最低
+''' 如下是解析函数 parse '''
 
-log_dir = os.path.join(os.getcwd(), 'Logs')
-if not os.path.exists(log_dir):
-    os.mkdir(log_dir)
+headers = {
+    'User-Agent': 'User-Agent:Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
+}
 
-file_handler_error = logging.FileHandler(os.path.join(log_dir, 'spider_error.log'), mode='a')  # 错误日志文件
-file_handler_error.setLevel(logging.ERROR)
-file_handler_error.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
-logger.addHandler(file_handler_error)
 
-if CONSOLE_LOG_TO_FILE:
-    file_handler_info = logging.FileHandler(os.path.join(log_dir, 'spider_info.log'), mode='w')  # 控制台日志文件
-    file_handler_info.setLevel(logging.INFO)
-    file_handler_info.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
-    logger.addHandler(file_handler_info)
+def parse_xc(url):  # 西刺代理
+    return ['{}://{}:{}'.format(http.lower(), ip, port) for ip, port, http in
+            re.findall(r'<td>([\d+.]+)</td>\s*?<td>(\d+)</td>.*?<td>([HhTtPpSs]+)</td>',
+                       requests.get(url, headers=headers, timeout=5).text, re.S)]
 
-console_handler = logging.StreamHandler()  # 控制台日志输出
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
-logger.addHandler(console_handler)
+
+def parse_66ip(url):  # 66免费代理
+    return ['http://{}'.format(proxy) for proxy in
+            re.findall(r'[\d.]+:\d+', requests.get(url, headers=headers, timeout=5).text)]
+
+
+def parse_5u(url):  # 无忧代理
+    reg = r'<ul.*?>(\d+\.\d+\.\d+\.\d+)<.*?>(\d+)</li>.*?<li>([高匿名透明]+)</li>.*?<li>([https]+)</li>'
+    return ['{}://{}:{}'.format(http, ip, port) for ip, port, level, http in
+            re.findall(reg, requests.get(url, headers=headers).text, re.S) if '匿' in level]
+
+
+def parse_k(url):  # 快代理
+    return ['{}://{}:{}'.format(http.lower(), ip, port) for ip, port, http in re.findall(
+        r'<tr.*?>(\d+\.\d+\.\d+\.\d+)<.*?>(\d+)</td>.*?>([HhTtPpSs]+)<', requests.get(url, headers=headers).text, re.S)]
+
+
+def parse_1(url):  # 私人公开代理接口
+    return ['http://{}'.format(js.get("proxy")) for js in requests.get(url, headers=headers).json()]
+
+
+def parse_free(url):
+    return ['{}://{}:{}'.format(data['protocol'], data['ip'], data['port']) for data in
+            (requests.get(url, headers=headers, timeout=5).json())['data']['data'] if data['anonymity'] == 2]
+
+
+def parse_ni(url):  # 泥马代理
+    text = requests.get(url, headers=headers).text
+    _proxies = []
+    for ip_port, http in re.findall(r'<td>(\d+\.\d+\.\d+\.\d+:\d+)</td>.*?<td>(H.*?)</td>', text, re.S):
+        if 'HTTP,HTTPS' in http:
+            _proxies.append('http://{}'.format(ip_port))
+            _proxies.append('https://{}'.format(ip_port))
+        elif 'HTTPS' in http:
+            _proxies.append('https://{}'.format(ip_port))
+        else:
+            _proxies.append('http://{}'.format(ip_port))
+    return _proxies
+
+
+def parse_hai(url):  # IP海
+    return ['{}://{}:{}'.format(http.lower(), ip, port) for ip, port, http in
+            re.findall(r'<tr.*?(\d+\.\d+\.\d+\.\d+).*?(\d+).*?(H[HhTtPpSs]+)',
+                       requests.get(url, headers=headers).text, re.S)]
 
 
 class ProxyPoolAPI(object):
@@ -83,147 +110,3 @@ class ProxyPoolAPI(object):
             return self.conn.smembers(self.pool_name)
         except Exception as unknown_error:
             logging.error('GET ALL PROXIES ERROR - {}'.format(unknown_error))
-
-
-pool = ProxyPoolAPI(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, pool_name=POOL_NAME)
-
-
-async def test_single_proxy(proxy):
-    try:
-        async with aiohttp.ClientSession() as session:
-            if isinstance(proxy, bytes):
-                proxy = proxy.decode('utf-8')
-            if REJECT_NO_ANONYMITY_PROXY:
-                async with session.get(TEST_URL_LEVER, proxy=proxy, timeout=7) as response:
-                    if response.status == 200:
-                        html = await response.read()
-                        if proxy[7:].split(':')[0] == json.loads(html.decode('utf8')).get('origin'):
-                            pool.add(proxy)
-                            logging.info('ANONYMOUS PROXY: {}'.format(proxy))
-                        else:
-                            pool.rem(proxy)
-                            logging.info('TRANSPARENT PROXY: {}'.format(proxy))
-                    else:
-                        pool.rem(proxy)
-                        logging.info('INVALID PROXY: {}'.format(proxy))
-            else:
-                async with session.head(TEST_URL, proxy=proxy, timeout=7) as response:
-                    if response.status == 200:
-                        pool.add(proxy)
-                        logging.info('VALID VALID: {}'.format(proxy))
-                    else:
-                        pool.rem(proxy)
-                        logging.info('INVALID PROXY: {}'.format(proxy))
-    except Exception as async_e:
-        pool.rem(proxy)
-        logging.info('INVALID PROXY: {}'.format(proxy))
-        del async_e
-
-
-def test_proxies(proxies):
-    if isinstance(proxies, set):
-        proxies = [proxy.decode('utf-8') for proxy in proxies]
-    proxies_http = [proxy for proxy in proxies if 'https' not in proxy]
-    proxies_https = [proxy for proxy in proxies if 'https' in proxy]
-    try:
-        loop = asyncio.get_event_loop()
-        tasks = [test_single_proxy(proxy) for proxy in proxies_http]
-        loop.run_until_complete(asyncio.wait(tasks))
-    except ValueError:
-        logging.error('ASYNC ERROR')
-    test_https_proxies(proxies_https)
-
-
-def test_https_proxies(proxies_https):
-    for proxy in proxies_https:
-        if isinstance(proxy, bytes):
-            proxy = proxy.decode('utf-8')
-        https_proxy = {
-            'https': proxy,
-        }
-        if REJECT_NO_ANONYMITY_PROXY:
-            response = requests.get(TEST_URL_LEVER, proxies=https_proxy, timeout=7)
-            if response.status_code == 200:
-                if proxy[8:].split(':')[0] == (response.json())['origin']:
-                    pool.add(proxy)
-                    logging.info('ANONYMOUS PROXY: {}'.format(proxy))
-                else:
-                    pool.rem(proxy)
-                    logging.info('TRANSPARENT PROXY: {}'.format(proxy))
-            else:
-                pool.rem(proxy)
-                logging.info('INVALID PROXY: {}'.format(proxy))
-        else:
-            response = requests.get(TEST_URL, proxies=https_proxy, timeout=7)
-            if response.status_code == 200:
-                pool.add(proxy)
-                logging.info('VALID VALID: {}'.format(proxy))
-            else:
-                pool.rem(proxy)
-                logging.info('INVALID PROXY: {}'.format(proxy))
-
-
-def spider_cycle():
-    now = int(time.time())
-    logging.info('THE SPIDER COME TO WORK')
-    for spider in SPIDER_CONFIGURE:
-        spider.append(now)
-        proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
-        if proxies:
-            logging.info('CRAWL SUCCESS: URL={}'.format(spider[0]))
-            test_proxies(proxies)
-        else:
-            logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
-
-    while True:
-        now = int(time.time())
-        for spider in SPIDER_CONFIGURE:
-            if now - spider[3] >= spider[2] * 60:
-                try:
-                    proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
-                    if proxies:
-                        test_proxies(proxies)
-                    else:
-                        logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
-                except Exception as error:
-                    logging.error('CRAWL ERROR: IP WAS SEALED, URL={}'.format(spider[0]))
-                    logging.error('CRAWL ERROR: IP WAS SEALED, ERROR MESSAGE={}'.format(error))
-        logging.info('THE SPIDER SLEEPS FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL))
-        time.sleep(SPIDER_CYCLE_INTERVAL * 60)
-        logging.info('THE SPIDER COMES TO CHECK AND WORK')
-
-
-def test_pool_cycle():
-    while True:
-        proxies = pool.get_all()
-        if proxies:
-            test_proxies(proxies)
-        time.sleep(PROXY_POOL_CYCLE_INTERVAL * 60)
-        logging.info('THE POOL TEST SLEEPS FOR {} MINUTES'.format(PROXY_POOL_CYCLE_INTERVAL))
-
-
-def get_ip():
-    (status, output) = subprocess.getstatusoutput('ifconfig')
-    if status == 0:
-        return re.search(r'ppp0.*?inet.*?(\d+.\d+.\d+.\d+).*?netmask', output, re.S).group(1)
-
-
-def replace_local_ip():
-    (status, output) = subprocess.getstatusoutput('adsl-stop;adsl-start')
-    if status == 0:
-        ip = get_ip()
-        logging.info('LOCAL IP UPDATED, NEW IP IS: {}'.format(ip))
-        if TINY_PROXY:
-            subprocess.getstatusoutput('systemctl restart tinyproxy.service')  # 解决服务挂掉问题
-            proxy = 'http://{}:{}'.format(ip, TINY_PROXY_PORT)
-            pool.add(proxy)
-            logging.info('ANONYMOUS PROXY (LOCAL): {}'.format(proxy))
-    else:
-        logging.error('LOCAL IP UPDATE FAILED')
-
-
-def replace_local_ip_cycle():
-    time.sleep(REPLACE_LOCAL_IP_FIRST_WAIT * 60)
-    while True:
-        replace_local_ip()
-        time.sleep(REPLACE_LOCAL_IP_CYCLE_INTERVAL * 60)
