@@ -37,7 +37,17 @@ logger.addHandler(console_handler)
 pool = ProxyPoolAPI(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, pool_name=POOL_NAME)
 
 
+def get_ip():
+    (status, output) = subprocess.getstatusoutput('ifconfig')
+    if status == 0:
+        return re.search(r'ppp0.*?inet.*?(\d+.\d+.\d+.\d+).*?netmask', output, re.S).group(1)
+
+
+local_ip = '125.81.15.117'  # get_ip()
+
+
 async def test_single_proxy(proxy, origin_pool):
+    global local_ip
     try:
         async with aiohttp.ClientSession() as session:
             async with session.head('http://www.baidu.com', proxy=proxy, timeout=HTTPS_TIMEOUT) as response:
@@ -49,7 +59,7 @@ async def test_single_proxy(proxy, origin_pool):
                     async with session.get('http://httpbin.org/get', proxy=proxy,
                                            timeout=HTTPS_TIMEOUT * 2) as response1:
                         html = await response1.read()
-                        if json.loads(html.decode('utf8')).get('origin') in proxy:
+                        if local_ip not in html:
                             pool.add(proxy)
                             logging.debug('ANONYMOUS PROXY: {}'.format(proxy))
                 else:
@@ -82,16 +92,18 @@ def put_https_proxies_to_queue(proxies_https, https_queue, origin_pool):
 
 def test_https_proxies_process(https_queue):
     # https_queue = get_https_queue()
+    global local_ip
     while True:
         proxy_origin_pool = https_queue.get(block=True)
         proxy, origin_pool = proxy_origin_pool.split('=')
         # logging.debug('DEBUG: proxy={},origin_pool={}'.format(proxy, origin_pool))
         proxy_dict = {
+            'http': proxy,
             'https': proxy,
         }
         if origin_pool == 'True':
             try:
-                response = requests.head('https://www.baidu.com', proxies=proxy_dict, timeout=HTTPS_TIMEOUT)
+                response = requests.head('http://www.baidu.com', proxies=proxy_dict, timeout=HTTPS_TIMEOUT)
                 if response.status_code == 200:
                     pool.add(proxy)
                     logging.debug('ANONYMOUS PROXY: {}'.format(proxy))
@@ -104,7 +116,7 @@ def test_https_proxies_process(https_queue):
             try:
                 response = requests.get('http://httpbin.org/get', proxies=proxy_dict, timeout=HTTPS_TIMEOUT * 2)
                 html = response.text
-                if json.loads(html.decode('utf8')).get('origin') in proxy:
+                if local_ip in html:
                     pool.add(proxy)
                     logging.debug('ANONYMOUS PROXY: {}'.format(proxy))
                 else:
@@ -185,16 +197,12 @@ def test_pool_cycle(https_queue):
         logging.info('THE POOL TESTER SLEEPS FOR {} MINUTES'.format(PROXY_POOL_CYCLE_INTERVAL))
 
 
-def get_ip():
-    (status, output) = subprocess.getstatusoutput('ifconfig')
-    if status == 0:
-        return re.search(r'ppp0.*?inet.*?(\d+.\d+.\d+.\d+).*?netmask', output, re.S).group(1)
-
-
 def replace_local_ip():
+    global local_ip
     (status, output) = subprocess.getstatusoutput('adsl-stop;adsl-start')
     if status == 0:
         ip = get_ip()
+        local_ip = ip
         logging.info('LOCAL IP UPDATED, NEW IP IS: {}'.format(ip))
         if TINY_PROXY:
             subprocess.getstatusoutput('systemctl restart tinyproxy.service')  # 解决服务挂掉问题

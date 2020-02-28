@@ -71,7 +71,8 @@ def parse_hai(url):  # IP海
 
 class ProxyPoolAPI(object):
     def __init__(self, host, port, password, pool_name):
-        self.conn = redis.Redis(host=host, port=port, password=password)
+        self.conn_pool = redis.ConnectionPool(host=host, port=port, password=password)
+        self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
         self.pool_name = pool_name
         try:
             self.conn.exists(pool_name)  # 验证是否连接
@@ -82,12 +83,15 @@ class ProxyPoolAPI(object):
 
     def add(self, proxy):
         try:
-            self.conn.sadd(self.pool_name, proxy)
+            self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
+            if not self.conn.sismember(self.pool_name, proxy):
+                self.conn.sadd(self.pool_name, proxy)
         except Exception as unknown_error:
             logging.error('ADD PROXY ERROR - {}'.format(unknown_error))
 
     def rem(self, proxy):
         try:
+            self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
             if self.conn.sismember(self.pool_name, proxy):
                 self.conn.srem(self.pool_name, proxy)
         except Exception as unknown_error:
@@ -95,18 +99,21 @@ class ProxyPoolAPI(object):
 
     def count(self):
         try:
+            self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
             return self.conn.scard(self.pool_name)
         except Exception as unknown_error:
             logging.error('GET COUNT OF PROXIES ERROR - {}'.format(unknown_error))
 
     def get_one(self):
         try:
+            self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
             return self.conn.srandmember(self.pool_name, 1)
         except Exception as unknown_error:
             logging.error('GET ONE PROXY ERROR - {}'.format(unknown_error))
 
     def get_all(self):
         try:
+            self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
             return self.conn.smembers(self.pool_name)
         except Exception as unknown_error:
             logging.error('GET ALL PROXIES ERROR - {}'.format(unknown_error))
