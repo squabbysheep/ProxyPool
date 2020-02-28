@@ -71,7 +71,10 @@ def parse_hai(url):  # IP海
 
 class ProxyPoolAPI(object):
     def __init__(self, host, port, password, pool_name):
-        self.conn_pool = redis.ConnectionPool(host=host, port=port, password=password)
+        self.host = host
+        self.port = port
+        self.password = password
+        self.conn_pool = redis.ConnectionPool(host=self.host, port=self.port, password=self.password)
         self.conn = redis.StrictRedis(connection_pool=self.conn_pool)
         self.pool_name = pool_name
         try:
@@ -88,6 +91,7 @@ class ProxyPoolAPI(object):
                 self.conn.sadd(self.pool_name, proxy)
         except Exception as unknown_error:
             logging.error('ADD PROXY ERROR - {}'.format(unknown_error))
+            self.conn_pool = redis.ConnectionPool(host=self.host, port=self.port, password=self.password)
 
     def rem(self, proxy):
         try:
@@ -96,6 +100,7 @@ class ProxyPoolAPI(object):
                 self.conn.srem(self.pool_name, proxy)
         except Exception as unknown_error:
             logging.error('REMOVE PROXY ERROR - {}'.format(unknown_error))
+            self.conn_pool = redis.ConnectionPool(host=self.host, port=self.port, password=self.password)
 
     def count(self):
         try:
@@ -103,6 +108,7 @@ class ProxyPoolAPI(object):
             return self.conn.scard(self.pool_name)
         except Exception as unknown_error:
             logging.error('GET COUNT OF PROXIES ERROR - {}'.format(unknown_error))
+            self.conn_pool = redis.ConnectionPool(host=self.host, port=self.port, password=self.password)
 
     def get_one(self):
         try:
@@ -110,6 +116,7 @@ class ProxyPoolAPI(object):
             return self.conn.srandmember(self.pool_name, 1)
         except Exception as unknown_error:
             logging.error('GET ONE PROXY ERROR - {}'.format(unknown_error))
+            self.conn_pool = redis.ConnectionPool(host=self.host, port=self.port, password=self.password)
 
     def get_all(self):
         try:
@@ -117,3 +124,4 @@ class ProxyPoolAPI(object):
             return self.conn.smembers(self.pool_name)
         except Exception as unknown_error:
             logging.error('GET ALL PROXIES ERROR - {}'.format(unknown_error))
+            self.conn_pool = redis.ConnectionPool(host=self.host, port=self.port, password=self.password)

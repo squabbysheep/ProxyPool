@@ -23,9 +23,14 @@ if not os.path.exists(log_dir):
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-# file log
+# file log info
 file_handler = logging.FileHandler(os.path.join(log_dir, 'info.log'), mode='a')
 file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
+logger.addHandler(file_handler)
+# file log error
+file_handler = logging.FileHandler(os.path.join(log_dir, 'error.log'), mode='a')
+file_handler.setLevel(logging.ERROR)
 file_handler.setFormatter(logging.Formatter('[%(levelname)s][%(asctime)s][%(message)s]'))
 logger.addHandler(file_handler)
 # console log
@@ -47,6 +52,7 @@ local_ip = '125.81.15.117'  # get_ip()
 
 
 async def test_single_proxy(proxy, origin_pool):
+    # logging.error('FUNC=test_single_proxy')
     global local_ip
     try:
         async with aiohttp.ClientSession() as session:
@@ -68,6 +74,7 @@ async def test_single_proxy(proxy, origin_pool):
     except Exception as async_error:
         pool.rem(proxy)
         logging.debug('INVALID PROXY: {}'.format(proxy))
+        # logging.error('async_error')
         del async_error
 
 
