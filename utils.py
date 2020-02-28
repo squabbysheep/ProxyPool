@@ -84,7 +84,6 @@ pool = ProxyPoolAPI(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, p
 
 async def test_single_proxy(proxy):
     global local_ip
-    logging.info('[DEBUG]: local_ip={}'.format(local_ip))
     try:
         async with aiohttp.ClientSession() as session:
             if isinstance(proxy, bytes):
