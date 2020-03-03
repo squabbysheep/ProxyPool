@@ -156,6 +156,9 @@ def get_ip():
         return re.search(r'ppp0.*?net.*?(\d+\.\d+\.\d+\.\d+).*?netmask', output, re.S).group(1)
 
 
+local_ip = get_ip()
+
+
 def replace_local_ip():
     (status, output) = subprocess.getstatusoutput('{}l-stop;{}l-start'.format('ads', 'ads'))
     if status == 0:
@@ -164,7 +167,7 @@ def replace_local_ip():
         ip = local_ip
         logging.info('LOCAL IP UPDATED, NEW IP IS: {}'.format(ip))
         if TINY_PROXY:
-            subprocess.getstatusoutput('{}ctl restart proxy.service'.format('system', 'tiny'))  # 解决服务挂掉问题
+            subprocess.getstatusoutput('{}ctl restart {}proxy.service'.format('system', 'tiny'))  # 解决服务挂掉问题
             proxy = 'http://{}:{}'.format(ip, TINY_PROXY_PORT)
             pool.add(proxy)
             logging.info('ANONYMOUS PROXY (LOCAL): {}'.format(proxy))
@@ -177,7 +180,6 @@ def replace_local_ip_cycle():
     while True:
         replace_local_ip()
         time.sleep(REPLACE_LOCAL_IP_CYCLE_INTERVAL * 60)
-
 
 # if __name__ == '__main__':
 #     local_ip = get_ip()
