@@ -10,8 +10,8 @@ SPIDER_CONFIGURE = [
     ['https://www.xicidaili.com/nn/', 'parse_xc', 5],  # 高匿
     ['https://www.xicidaili.com/nn/2', 'parse_xc', 5],  # 高匿
     ['http://www.ip3366.net/free/?stype=1', 'parse_xc', 5],  # 高匿
-    ['http://www.data5u.com/', 'parse_5u', 5],  # 高匿
-    ['https://www.kuaidaili.com/free/inha/1/', 'parse_k', 5],  # 高匿
+    # ['http://www.data5u.com/', 'parse_5u', 5],  # 高匿
+    # ['https://www.kuaidaili.com/free/inha/1/', 'parse_k', 5],  # 高匿
     ['http://www.nimadaili.com/gaoni/1/', 'parse_ni', 5],  # 高匿
     ['http://www.nimadaili.com/gaoni/2/', 'parse_ni', 5],  # 高匿
     ['http://www.nimadaili.com/gaoni/3/', 'parse_ni', 5],  # 高匿
