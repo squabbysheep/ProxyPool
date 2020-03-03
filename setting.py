@@ -32,7 +32,7 @@ SPIDER_CONFIGURE = [
 ]
 
 # 爬虫循环检测间隔
-SPIDER_CYCLE_INTERVAL = 1  # 默认1分钟检测一次
+SPIDER_CYCLE_INTERVAL = 3  # 默认1分钟检测一次
 
 # 代理池循环检测间隔
 PROXY_POOL_CYCLE_INTERVAL = 3  # 默认3分钟检测一次

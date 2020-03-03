@@ -5,15 +5,15 @@
 @Email  : LuckyJasonone@gmail.com
 @Description : null
 """
-import asyncio
-import json
-import subprocess
+import os
 import sys
-import aiohttp
 import time
+import json
 import redis
 import logging
-import os
+import asyncio
+import aiohttp
+import subprocess
 from setting import *
 from parse import *
 
@@ -123,31 +123,22 @@ def test_proxies(proxies):
 
 
 def spider_cycle():
-    now = int(time.time())
-    logging.info('THE SPIDER COME TO WORK')
-    for spider in SPIDER_CONFIGURE:
-        spider.append(now)
-        proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
-        proxies = [proxy.replace('s', '') for proxy in proxies]
-        if proxies:
-            logging.info('CRAWL SUCCESS: URL={}'.format(spider[0]))
-            test_proxies(proxies)
-        else:
-            logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
     while True:
-        now = int(time.time())
-        for spider in SPIDER_CONFIGURE:
-            if now - spider[3] >= spider[2] * 60:
-                spider[3] = now
+        try:
+            logging.info('THE SPIDER COME TO WORK')
+            for spider in SPIDER_CONFIGURE:
                 proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
+                proxies = [proxy.replace('s', '') for proxy in proxies]
                 if proxies:
-                    logging.error('CRAWL SUCCESS: URL={}'.format(spider[0]))
+                    logging.info('CRAWL SUCCESS: URL={}'.format(spider[0]))
                     test_proxies(proxies)
                 else:
                     logging.error('CRAWL ERROR: URL={}'.format(spider[0]))
-        logging.info('THE SPIDER SLEEPS FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL))
-        time.sleep(SPIDER_CYCLE_INTERVAL * 60)
-        logging.info('THE SPIDER COMES TO CHECK AND WORK')
+            logging.info('THE SPIDER SLEEPS FOR {} MINUTES'.format(SPIDER_CYCLE_INTERVAL))
+            time.sleep(SPIDER_CYCLE_INTERVAL * 60)
+        except Exception as error:
+            del error
+            logging.error('SPIDER CYCLE APPEAR ERROR.')
 
 
 def test_pool_cycle():
@@ -163,9 +154,6 @@ def get_ip():
     (status, output) = subprocess.getstatusoutput('ifconfig')
     if status == 0:
         return re.search(r'ppp0.*?net.*?(\d+\.\d+\.\d+\.\d+).*?netmask', output, re.S).group(1)
-
-
-local_ip = get_ip()
 
 
 def replace_local_ip():
@@ -189,3 +177,13 @@ def replace_local_ip_cycle():
     while True:
         replace_local_ip()
         time.sleep(REPLACE_LOCAL_IP_CYCLE_INTERVAL * 60)
+
+
+# if __name__ == '__main__':
+#     local_ip = get_ip()
+#     spider = Process(target=spider_cycle, name='spider_cycle')  # 不会停下来,没有返回值
+#     test = Process(target=test_pool_cycle, name='test_pool_cycle')
+#     local = Process(target=replace_local_ip_cycle, name='replace_local_ip_cycle')
+#     spider.start()
+#     test.start()
+#     local.start()
