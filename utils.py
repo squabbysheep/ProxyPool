@@ -125,35 +125,38 @@ def test_proxies(proxies):
     return None
 
 
-def spider_cycle():
-    spider_cycle_count = 0
-    while True:
-        spider_cycle_count += 1
-        logging.warning('spider_cycle_count={}'.format(spider_cycle_count))
-        try:
-            logging.info('The spider come to work')
-            for spider in SPIDER_CONFIGURE:
-                proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
-                proxies = [proxy.replace('s', '') for proxy in proxies]
-                pool_proxies = pool.get_all()
-                proxies = list(set(proxies) - set(pool_proxies))
-                if proxies:
-                    logging.info('Crawl success: URL={}'.format(spider[0]))
-                    process = Process(target=test_proxies, args=(proxies,))
-                    process.start()
-                    for i in range(int(len(proxies) * 0.8)):
-                        if not process.is_alive():
-                            break
-                        time.sleep(5)
-                    if process.is_alive():
-                        process.terminate()
-                        logging.error('Crawl timeout: URL={}'.format(spider[0]))
-                else:
-                    logging.error('Crawl error: URL={}'.format(spider[0]))
-        except Exception as error:
-            del error
-            logging.error('Spider cycle appear error.')
+def spider_one():
+    global pool
+    try:
+        for spider in SPIDER_CONFIGURE:
+            proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
+            proxies = [proxy.replace('s', '') for proxy in proxies]
+            pool_proxies = pool.get_all()
+            proxies = list(set(proxies) - set(pool_proxies))
+            if proxies:
+                logging.info('Crawl success: URL={}'.format(spider[0]))
+                process = Process(target=test_proxies, args=(proxies,))
+                process.start()
+                for i in range(int(len(proxies) * 0.8)):
+                    if not process.is_alive():
+                        break
+                    time.sleep(5)
+                if process.is_alive():
+                    process.terminate()
+                    logging.error('Crawl timeout: URL={}'.format(spider[0]))
+            else:
+                logging.error('Crawl error: URL={}'.format(spider[0]))
+    except Exception as error:
+        del error
+        logging.error('Spider cycle appear error.')
+    logging.info('Crawl one cycle success')
 
+
+def spider_cycle():
+    while True:
+        logging.info('Crawl one cycle running...')
+        p_crawl = Process(target=spider_one)
+        p_crawl.start()
         logging.info('The spider sleeps for {} minutes'.format(SPIDER_CYCLE_INTERVAL))
         time.sleep(SPIDER_CYCLE_INTERVAL * 60)
 

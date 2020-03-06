@@ -9,6 +9,8 @@ from multiprocessing import Process
 from utils import spider_cycle
 from utils import test_pool_cycle
 from utils import replace_local_ip_cycle
+import logging
+import sys
 
 
 def run():
@@ -21,6 +23,8 @@ def run():
     spider.join()
     test.join()
     local.join()
+    logging.info('Proxy pool error, System exit...')
+    sys.exit(0)
 
 
 if __name__ == '__main__':
