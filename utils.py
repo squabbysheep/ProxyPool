@@ -126,12 +126,17 @@ def test_proxies(proxies):
 
 
 def spider_cycle():
+    spider_cycle_count = 0
     while True:
+        spider_cycle_count += 1
+        logging.warning('spider_cycle_count={}'.format(spider_cycle_count))
         try:
             logging.info('The spider come to work')
             for spider in SPIDER_CONFIGURE:
                 proxies = eval('{0}("{1}")'.format(spider[1], spider[0]))
                 proxies = [proxy.replace('s', '') for proxy in proxies]
+                pool_proxies = pool.get_all()
+                proxies = list(set(proxies) - set(pool_proxies))
                 if proxies:
                     logging.info('Crawl success: URL={}'.format(spider[0]))
                     process = Process(target=test_proxies, args=(proxies,))

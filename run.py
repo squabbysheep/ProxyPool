@@ -18,6 +18,9 @@ def run():
     spider.start()
     test.start()
     local.start()
+    spider.join()
+    test.join()
+    local.join()
 
 
 if __name__ == '__main__':
