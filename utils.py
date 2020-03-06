@@ -22,7 +22,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # 设置为最低
 
 log_dir = os.path.join(os.getcwd(), 'Logs')
-log_file = os.path.join(log_dir, 'proxy_pool.log')
+log_file = os.path.join(log_dir, '{}_proxy_pool.log'.format(time.strftime('%Y%m%d')))
 if not os.path.exists(log_dir):
     os.mkdir(log_dir)
 
